@@ -153,16 +153,104 @@ plt.legend()
 plt.show()
 
 
-
+"""
 time_period = 20
 history = []
 sma_values = []
+
+close = samsung_data['Adj Close']
 
 for close_price in close:
     history.append(close_price)
     if len(history) > time_period:
         del(history[0])
-
-sma_values.append(stats.mean(history))
+    sma_values.append(stats.mean(history))
 
 samsung_data = samsung_data.assign(ClosePrice=pd.Series(close, index=samsung_data.index))
+samsung_data = samsung_data.assign(Simple20DayMovingAverage=pd.Series(sma_values,
+                                    index=samsung_data.index))
+close_price = samsung_data['ClosePrice']
+sma = samsung_data['Simple20DayMovingAverage']
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111, ylabel='Samsung')
+close_price.plot(ax=ax1, color='g', lw=2., legend=True)
+sma.plot(ax=ax1, color='r', lw=2., legend=True)
+plt.show()
+
+
+
+num_periods = 20
+K = 2 / (num_periods + 1)
+ema_p = 0
+ema_values = []
+close = samsung_data['Adj Close']
+
+for close_price in close:
+    if (ema_p == 0):
+        ema_p = close_price
+    else:
+        ema_p = (close_price - ema_p) * K + ema_p
+    ema_values.append(ema_p)
+
+samsung_data = samsung_data.assign(ClosePrice=pd.Series(close, index=samsung_data.index))
+samsung_data = samsung_data.assign(Exponential20DayMovingAverage=pd.Series(ema_values,
+                                    index=samsung_data.index))
+close_price = samsung_data['ClosePrice']
+ema = samsung_data['Exponential20DayMovingAverage']
+
+fig = plt.figure()
+ax1 = fig.add_subplot(111, ylabel='Samsung')
+close_price.plot(ax=ax1, color='g', lw=2., legend=True)
+ema.plot(ax=ax1, color='r', lw=2., legend=True)
+plt.savefig('ema.png')
+plt.show()
+"""
+
+close = samsung_data['Adj Close']
+
+num_periods_fast = 10
+K_fast = 2 / (num_periods_fast + 1)
+ema_fast = 0
+
+num_periods_slow = 40
+K_slow = 2 / (num_periods_slow + 1)
+ema_slow = 0
+
+ema_fast_values = []
+ema_slow_values = []
+apo_values = []
+
+for close_price in close:
+    if (ema_fast == 0):
+        ema_fast = close_price
+        ema_slow = close_price
+    else:
+        ema_fast = (close_price - ema_fast) * K_fast + ema_fast
+        ema_slow = (close_price - ema_slow) * K_slow + ema_slow
+
+    ema_fast_values.append(ema_fast)
+    ema_slow_values.append(ema_slow)
+    apo_values.append(ema_fast - ema_slow)
+
+samsung_data = samsung_data.assign(ClosePrice=pd.Series(close, index=samsung_data.index))
+samsung_data = samsung_data.assign(FastExponential10DayMovingAverage=pd.Series(ema_fast_values,
+                                    index=samsung_data.index))
+samsung_data = samsung_data.assign(SlowExponential40DayMovingAverage=pd.Series(ema_slow_values,
+                                    index=samsung_data.index))
+samsung_data = samsung_data.assign(AbsolutePriceOscillator=pd.Series(apo_values,
+                                    index=samsung_data.index))
+close_price = samsung_data['ClosePrice']
+ema_f = samsung_data['FastExponential10DayMovingAverage']
+ema_s = samsung_data['SlowExponential40DayMovingAverage']
+apo = samsung_data['AbsolutePriceOscillator']
+
+fig = plt.figure()
+ax1 = fig.add_subplot(211, ylabel='Samsung')
+close_price.plot(ax=ax1, color='g', lw=2., legend=True)
+ema_f.plot(ax=ax1, color='b', lw=2., legend=True)
+ema_s.plot(ax=ax1, color='r', lw=2., legend=True)
+ax2 = fig.add_subplot(212, ylabel='APO')
+apo.plot(ax=ax2, color='black', lw=2., legend=True)
+#plt.savefig('ema.png')
+plt.show()
